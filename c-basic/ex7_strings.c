@@ -23,7 +23,7 @@ int main() {
   printf("prints hello: %s\n", hello_str);
 
   // TODO: print the length of hello_str
-  printf("length of hello: %d\n", strlen(hello_str)+1);
+  printf("length of hello: %d\n", strlen(hello_str));
 
   // TODO: allocate memory to store the string "world"
   char* world_str = malloc(sizeof(char)*6);
@@ -46,7 +46,7 @@ int main() {
   printf("address of world_str: %p\n", world_str);
 
   // TODO: compute the address of the letter r using world_str
-  char* ptr_to_r = world_str+3;
+  char* ptr_to_r = world_str+2;
   printf("address of 'r': %p\n", ptr_to_r);
 
   // TODO: allocate memory to store the string "hello world"
