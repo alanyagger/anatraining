@@ -23,7 +23,7 @@ int main() {
   printf("prints hello: %s\n", hello_str);
 
   // TODO: print the length of hello_str
-  printf("length of hello: %d\n", strlen(hello_str));
+  printf("length of hello: %d\n", strlen(hello_str)+1);
 
   // TODO: allocate memory to store the string "world"
   char* world_str = malloc(sizeof(char)*6);
