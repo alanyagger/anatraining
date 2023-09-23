@@ -6,12 +6,12 @@ using namespace std;
 // typedef long long ll;
 
 int main() {
-	long long n=0, m=0, k=0,temp=0,sig=0,temp2=0,i=0;
+	unsigned long long n=0, m=0, k=0,temp=0,sig=0,temp2=0,i=0;
 	cin.sync_with_stdio(false);
 	cin >> n >> m >> k;
-	long long *arr=new long long[n+1];
+	unsigned long long *arr=new unsigned long long[n+1];
 	for (i = 1; i <= n; i++) {
-		long long ai;
+		unsigned long long ai;
 		cin >> ai;
 		arr[i]=ai;
 	}
@@ -28,6 +28,7 @@ int main() {
 			temp=temp2;
 			sig=i;
 		}
+		cout << temp<< ' '; 
 		i++;
 	}
 	if (temp<(m*k))
