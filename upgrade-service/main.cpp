@@ -28,7 +28,6 @@ int main() {
 			temp=temp2;
 			sig=i;
 		}
-		cout << temp<< ' '; 
 		i++;
 	}
 	if (temp<(m*k))
