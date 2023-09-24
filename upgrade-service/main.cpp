@@ -7,7 +7,7 @@ using namespace std;
 
 int main() {
 	long long  k,sum=0,minsum=0;
-	unsigned int n,m,sig; 
+	unsigned int n,m,temp,sig; 
 	cin.sync_with_stdio(false);
 	queue<long long> q1;
 	long long q2;
@@ -18,12 +18,13 @@ int main() {
 		q1.push(ai);
 		sum+=ai;    
 	}
+	temp=1;
 	sig=1;
 	minsum=sum;
 	for (unsigned int j=m+1;j<=n;j++)
 	{
 		long long bi;
-		unsigned int temp=2;
+		temp++;
 		cin >>bi;
 		q1.push(bi);
 		sum+=bi-q1.front();
@@ -32,8 +33,7 @@ int main() {
 			minsum=sum;
 			sig=temp;
 		}		
-		q1.pop();
-		temp++;	
+		q1.pop();	
 	}
 	if (minsum < m*k)
 	{
