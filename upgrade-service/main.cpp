@@ -26,14 +26,15 @@ int main() {
 		long long bi;
 		temp++;
 		cin >>bi;
-		q1.push(bi);
 		sum+=bi-q1.front();
+		q1.pop();
+		q1.push(bi);
 		if (sum<minsum)
 		{
 			minsum=sum;
 			sig=temp;
 		}		
-		q1.pop();	
+			
 	}
 	if (minsum < m*k)
 	{
