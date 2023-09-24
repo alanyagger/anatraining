@@ -6,37 +6,45 @@ using namespace std;
 // typedef long long ll;
 
 int main() {
-	unsigned long long n=0, m=0, k=0,temp=0,sig=0,temp2=0,i=0;
+	long long n, m, k,temp,sig,dir,sum=0,minsum=0;
 	cin.sync_with_stdio(false);
+	queue<int> q1;
+	queue<int> q2;
 	cin >> n >> m >> k;
-	unsigned long long *arr=new unsigned long long[n+1];
-	for (i = 1; i <= n; i++) {
-		unsigned long long ai;
+	for (long long i = 1; i <= n; i++) {
+		long long ai;
 		cin >> ai;
-		arr[i]=ai;
+		q1.push(ai);    
 	}
-    for (i=1;i<=m;i++)
-    {
-    	temp+=arr[i];
+	for (long long j=1;j<=m;j++)
+	{
+		dir=q1.front();
+		sum+=dir;
+		q1.pop();
+		q2.push(dir);
 	}
+	temp=1;
 	sig=1;
-	for(i=2;i<=n-m+1;)
+	minsum=sum;
+	while(!q1.empty())
 	{
-		temp2=temp+arr[i+m-1]-arr[i-1];
-		if (temp2<temp)
+		temp++;
+		sum=sum+q1.front()-q2.front();
+		q2.push(q1.front());
+		q1.pop();
+		q2.pop();
+		if (sum<minsum)
 		{
-			temp=temp2;
-			sig=i;
+			minsum=sum;
+			sig=temp;
 		}
-		i++;
 	}
-	if (temp<(m*k))
+	if (minsum < m*k)
 	{
-		cout << sig <<' '<<sig+m-1 << endl;
+		cout << sig<<' '<<sig+m-1<<endl;
 	}
-	else{
-		cout << 0<<' '<< 0 << endl;
+    else{
+    	cout<<0<<' '<<0<<endl;
 	}
-
 	return 0;
 }
