@@ -6,26 +6,22 @@ using namespace std;
 // typedef long long ll;
 
 int main() {
-	unsigned long long k,temp,sig,dir,sum=0,minsum=0;
-	unsigned int n ,m; 
+	unsigned long long n,m,k,temp=1,sig=1,sum=0,minsum=0;
 	cin.sync_with_stdio(false);
 	queue<unsigned long long> q1;
 	queue<unsigned long long> q2;
 	cin >> n >> m >> k;
-	for (unsigned long long i = 1; i <= n; i++) {
+	for (unsigned long long i = 1; i <= m; i++) {
 		unsigned long long ai;
 		cin >> ai;
-		q1.push(ai);    
+		q1.push(ai); 
+		sum+=ai;   
 	}
-	for (unsigned long long j=1;j<=m;j++)
-	{
-		dir=q1.front();
-		sum+=dir;
-		q1.pop();
-		q2.push(dir);
+	for (unsigned long long i = m+1; i <= n; i++) {
+		unsigned long long ai;
+		cin >> ai;
+		q1.push(ai);   
 	}
-	temp=1;
-	sig=1;
 	minsum=sum;
 	while(!q1.empty())
 	{
