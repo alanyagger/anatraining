@@ -12,7 +12,7 @@ int main() {
 	queue<long long> q1;
 	long long q2;
 	cin >> n >> m >> k;
-	for (unsigned int i = 1; i <= m; i++) {
+	for (unsigned short i = 1; i <= m; i++) {
 		long long ai;
 		cin >> ai;
 		q1.push(ai);
@@ -21,20 +21,19 @@ int main() {
 	temp=1;
 	sig=1;
 	minsum=sum;
-	for (unsigned int j=m+1;j<=n;j++)
+	for (unsigned short j=m+1;j<=n;j++)
 	{
 		long long bi;
 		temp++;
 		cin >>bi;
-		sum+=bi-q1.front();
-		q1.pop();
 		q1.push(bi);
+		sum+=bi-q1.front();
 		if (sum<minsum)
 		{
 			minsum=sum;
 			sig=temp;
 		}		
-			
+		q1.pop();	
 	}
 	if (minsum < m*k)
 	{
