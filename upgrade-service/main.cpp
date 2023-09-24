@@ -32,7 +32,8 @@ int main() {
 			minsum=sum;
 			sig=temp;
 		}		
-		q1.pop();	
+		q1.pop();
+		temp++;	
 	}
 	if (minsum < m*k)
 	{
