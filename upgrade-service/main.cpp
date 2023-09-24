@@ -8,8 +8,8 @@ using namespace std;
 int main() {
 	long long n, m, k,temp,sig,dir,sum=0,minsum=0;
 	cin.sync_with_stdio(false);
-	queue<int> q1;
-	queue<int> q2;
+	queue<long long> q1;
+	queue<long long> q2;
 	cin >> n >> m >> k;
 	for (long long i = 1; i <= n; i++) {
 		long long ai;
