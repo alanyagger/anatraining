@@ -7,12 +7,12 @@ using namespace std;
 
 int main() {
 	long long  k,sum=0,minsum=0;
-	int n,m,temp,sig; 
+	unsigned int n,m,temp,sig; 
 	cin.sync_with_stdio(false);
 	queue<long long> q1;
 	long long q2;
 	cin >> n >> m >> k;
-	for (int i = 1; i <= m; i++) {
+	for (unsigned int i = 1; i <= m; i++) {
 		long long ai;
 		cin >> ai;
 		q1.push(ai);
@@ -21,7 +21,7 @@ int main() {
 	temp=1;
 	sig=1;
 	minsum=sum;
-	for (int j=m+1;j<=n;j++)
+	for (unsigned int j=m+1;j<=n;j++)
 	{
 		long long bi;
 		temp++;
