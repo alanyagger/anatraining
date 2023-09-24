@@ -6,7 +6,8 @@ using namespace std;
 // typedef long long ll;
 
 int main() {
-	unsigned long long n, m, k,temp,sig,dir,sum=0,minsum=0;
+	unsigned long long k,temp,sig,dir,sum=0,minsum=0;
+	unsigned int n ,m; 
 	cin.sync_with_stdio(false);
 	queue<unsigned long long> q1;
 	queue<unsigned long long> q2;
