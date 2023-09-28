@@ -263,7 +263,8 @@ void serve_forever(int* socket_number, void (*request_handler)(int)) {
    */
 
   /* PART 1 BEGIN */
-
+  bind(*socket_number,&server_address,sizeof(server_address));
+  listen(*socket_number,1024);
   /* PART 1 END */
   printf("Listening on port %d...\n", server_port);
 
@@ -280,7 +281,7 @@ void serve_forever(int* socket_number, void (*request_handler)(int)) {
                                   (socklen_t*)&client_address_length);
     if (client_socket_number < 0) {
       perror("Error accepting socket");
-      continue;
+      break;
     }
 
     printf("Accepted connection from %s on port %d\n", inet_ntoa(client_address.sin_addr),
