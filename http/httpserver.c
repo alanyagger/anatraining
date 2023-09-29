@@ -17,7 +17,7 @@
 
 #include "libhttp.h"
 #include "wq.h"
-
+#define BUFFERMAX 21000
 /*
  * Global configuration variables.
  * You need to use these in your implementation of handle_files_request and
@@ -39,12 +39,18 @@ void serve_file(int fd, char* path) {
 
   /* TODO: PART 2 */
   /* PART 2 BEGIN */
-
+  int fdofwww;
+  struct stat filestat;
+  char* contentlen=malloc(sizeof(int)+1);
+  char* bufwww=malloc(BUFFERMAX);
+  stat(path,&filestat);
   http_start_response(fd, 200);
   http_send_header(fd, "Content-Type", http_get_mime_type(path));
-  http_send_header(fd, "Content-Length", "0"); // TODO: change this line too
+  sprintf(contentlen,"%d",filestat.st_size);
+  http_send_header(fd, "Content-Length", contentlen); // TODO: change this line too
   http_end_headers(fd);
-
+  fdofwww=open(path,O_RDWR);
+  
   /* PART 2 END */
 }
 
