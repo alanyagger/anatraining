@@ -117,7 +117,7 @@ void handle_files_request(int fd) {
    */
 
   /* PART 2 & 3 BEGIN */
-
+  
   /* PART 2 & 3 END */
 
   close(fd);
