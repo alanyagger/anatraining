@@ -17,6 +17,8 @@
 
 #include "libhttp.h"
 #include "wq.h"
+
+#define BUFFERMAX 2048
 /*
  * Global configuration variables.
  * You need to use these in your implementation of handle_files_request and
@@ -30,6 +32,29 @@ char* server_files_directory;
 char* server_proxy_hostname;
 int server_proxy_port;
 
+void socketwrite(int fd, char *buffer, int length)
+{
+    int writtenbytes;
+    while(length>0)
+    {
+      writtenbytes=write(fd,buffer,length);
+      length=length-writtenbytes;
+      buffer=buffer+writtenbytes;
+    }
+}
+
+int socket_rdwr(int fd,int filefd)
+{
+  char buffer[BUFFERMAX];
+  int readbytes;
+  readbytes=read(filefd,buffer,BUFFERMAX);
+  while (readbytes>0)
+  {
+    socketwrite(fd,buffer,readbytes);
+    readbytes=read(filefd,buffer,BUFFERMAX);
+  }
+  return 0;
+}
 /*
  * Serves the contents the file stored at `path` to the client socket `fd`.
  * It is the caller's reponsibility to ensure that the file stored at `path` exists.
@@ -86,7 +111,7 @@ void serve_directory(int fd, char* path) {
 void handle_files_request(int fd) {
 
   struct http_request* request = http_request_parse(fd);
-  int fdofwww;
+  int filefd;
 
   if (request == NULL || request->path[0] != '/') {
     http_start_response(fd, 400);
@@ -121,7 +146,7 @@ void handle_files_request(int fd) {
    */
 
   /* PART 2 & 3 BEGIN */
-  if(filefd=open(path,O_RDWR)==-1)
+  if((filefd=open(path,O_RDWR))==-1)
   {
     http_start_response(fd,404);
     http_send_header(fd,"Content-Type","text/html");
