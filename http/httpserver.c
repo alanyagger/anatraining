@@ -51,6 +51,9 @@ void serve_file(int fd, char* path) {
   http_end_headers(fd);
   fdofwww=open(path,O_RDWR);
   
+  free(contentlen);
+  free(bufwww);
+  close(fdofwww);
   /* PART 2 END */
 }
 
