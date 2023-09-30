@@ -50,7 +50,8 @@ void serve_file(int fd, char* path) {
   http_send_header(fd, "Content-Length", contentlen); // TODO: change this line too
   http_end_headers(fd);
   fdofwww=open(path,O_RDWR);
-  
+  read(fdofwww,bufwww,BUFFERMAX);
+  write()
   /* PART 2 END */
 }
 
