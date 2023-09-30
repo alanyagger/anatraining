@@ -52,6 +52,10 @@ void serve_file(int fd, char* path) {
   fdofwww=open(path,O_RDWR);
   read(fdofwww,bufwww,BUFFERMAX);
   write()
+  
+  free(contentlen);
+  free(bufwww);
+  close(fdofwww);
   /* PART 2 END */
 }
 
