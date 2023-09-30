@@ -19,6 +19,7 @@
 #include "wq.h"
 
 #define BUFFERMAX 2048
+#define DIRLENMAX 512
 /*
  * Global configuration variables.
  * You need to use these in your implementation of handle_files_request and
@@ -64,7 +65,7 @@ void serve_file(int fd, char* path,int filefd) {
   /* TODO: PART 2 */
   /* PART 2 BEGIN */
   struct stat filestat;
-  char* contentlen=malloc(sizeof(int)+1);
+  char* contentlen=malloc(sizeof(long)+1);
   stat(path,&filestat);
   http_start_response(fd, 200);
   http_send_header(fd, "Content-Type", http_get_mime_type(path));
@@ -77,10 +78,44 @@ void serve_file(int fd, char* path,int filefd) {
 }
 
 void serve_directory(int fd, char* path) {
-  http_start_response(fd, 200);
-  http_send_header(fd, "Content-Type", http_get_mime_type(".html"));
-  http_end_headers(fd);
+  char* buffer=malloc(DIRLENMAX);
+  int filefd;
 
+  http_format_index(buffer,path);
+  filefd=open(buffer,O_RDONLY);
+  if (filefd!=-1)
+  {
+    struct stat filestat;
+    char* contentlen=malloc(sizeof(long)+1);
+    stat(buffer,&filestat);
+    sprintf(contentlen,"%ld",filestat.st_size);
+    http_start_response(fd, 200);
+    http_send_header(fd, "Content-Type", http_get_mime_type(".html"));
+    http_send_header(fd, "Content-Length", contentlen); 
+    http_end_headers(fd);
+    socket_rdwr(fd,filefd);
+    free(contentlen);
+    close(filefd);
+  }
+  else
+  {
+    DIR* dirp;
+    struct dirent* direntp;
+    dirp=opendir(path);
+    http_start_response(fd, 200);
+    http_send_header(fd, "Content-Type", http_get_mime_type(".html"));
+    http_send_header(fd, "Content-Length","BUFFERMAX");
+    http_end_headers(fd);
+    while((direntp=readdir(dirp))!=NULL)
+    {
+      memset(buffer,NULL,DIRLENMAX);
+      http_format_href(buffer,path,direntp->d_name);
+      dprintf(fd, "%s",buffer);
+      //http_format_href(buffer,"../",'\0');
+    }
+    closedir(dirp);
+  }
+  free(buffer);
   /* TODO: PART 3 */
   /* PART 3 BEGIN */
 
@@ -146,22 +181,27 @@ void handle_files_request(int fd) {
    */
 
   /* PART 2 & 3 BEGIN */
-  if((filefd=open(path,O_RDWR))==-1)
+  struct stat isdir;
+  stat(path,&isdir);
+  if (S_ISREG(isdir.st_mode))
+  { 
+    filefd=open(path,O_RDWR);
+    serve_file(fd,path,filefd);
+    close(filefd);
+  }
+  else if(S_ISDIR(isdir.st_mode))
   {
-    http_start_response(fd,404);
-    http_send_header(fd,"Content-Type","text/html");
-    http_end_headers(fd);
+    serve_directory(fd,path);
   }
   else
   {
-    serve_file(fd,path,filefd);
-  }
-  /* PART 2 & 3 END */
-  close(filefd);
-  close(fd);
-  return;
-}
-
+    http_start_response(fd, 404);
+    http_send_header(fd, "Content-Type", "text/html");
+    http_end_headers(fd);
+  }  
+close(fd);
+return;
+}    /* PART 2 & 3 END */
 /*
  * Opens a connection to the proxy target (hostname=server_proxy_hostname and
  * port=server_proxy_port) and relays traffic to/from the stream fd and the
