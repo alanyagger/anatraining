@@ -7,6 +7,7 @@
 #include "libhttp.h"
 
 #define LIBHTTP_REQUEST_MAX_SIZE 8192
+#define BUFFERMAX 8192
 
 void http_fatal_error(char* message) {
   fprintf(stderr, "%s\n", message);
@@ -100,6 +101,32 @@ char* http_get_response_message(int status_code) {
     default:
       return "Internal Server Error";
   }
+}
+
+void socketwrite(int fd, void *buffer, int length)
+{
+    int bytes_left;
+    int written_bytes;
+    char *ptr;
+    ptr = buffer;
+    bytes_left = length;
+    while (bytes_left > 0)
+    {
+        written_bytes = write(fd, ptr, bytes_left);
+        bytes_left -= written_bytes;
+        ptr += written_bytes;
+    }
+}
+
+int socket_rdwr(int fd,int filefd)
+{
+  char buffer[BUFFERMAX];
+  ssize_t readbytes=read(filefd,buffer,BUFFERMAX);
+  while (readbytes>0)
+  {
+    socketwrite(fd,buffer,readbytes);
+  }
+  return 0;
 }
 
 void http_start_response(int fd, int status_code) {

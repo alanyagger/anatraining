@@ -17,7 +17,6 @@
 
 #include "libhttp.h"
 #include "wq.h"
-#define BUFFERMAX 21000
 /*
  * Global configuration variables.
  * You need to use these in your implementation of handle_files_request and
@@ -35,30 +34,20 @@ int server_proxy_port;
  * Serves the contents the file stored at `path` to the client socket `fd`.
  * It is the caller's reponsibility to ensure that the file stored at `path` exists.
  */
-void serve_file(int fd, char* path,int fdofwww) {
+void serve_file(int fd, char* path,int filefd) {
 
   /* TODO: PART 2 */
   /* PART 2 BEGIN */
   struct stat filestat;
   char* contentlen=malloc(sizeof(int)+1);
-  char* bufwww=malloc(BUFFERMAX);
-  ssize_t temp;
   stat(path,&filestat);
   http_start_response(fd, 200);
   http_send_header(fd, "Content-Type", http_get_mime_type(path));
-  sprintf(contentlen,"%d",filestat.st_size);
+  sprintf(contentlen,"%ld",filestat.st_size);
   http_send_header(fd, "Content-Length", contentlen); // TODO: change this line too
   http_end_headers(fd);
-  do
-  {
-    temp=read(fdofwww,bufwww,BUFFERMAX);
-  }while(temp!=0);
-  do
-  {
-    temp=write(fd,bufwww,BUFFERMAX);
-  }while(temp!=0);
+  socket_rdwr(fd,filefd);
   free(contentlen);
-  free(bufwww);
   /* PART 2 END */
 }
 
@@ -132,19 +121,18 @@ void handle_files_request(int fd) {
    */
 
   /* PART 2 & 3 BEGIN */
-  if(fdofwww=open(path,O_RDWR)==-1)
+  if(filefd=open(path,O_RDWR)==-1)
   {
-    printf("%d",fdofwww);
     http_start_response(fd,404);
     http_send_header(fd,"Content-Type","text/html");
     http_end_headers(fd);
   }
   else
   {
-    serve_file(fd,path,fdofwww);
+    serve_file(fd,path,filefd);
   }
   /* PART 2 & 3 END */
-  close(fdofwww);
+  close(filefd);
   close(fd);
   return;
 }
