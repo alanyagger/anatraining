@@ -437,7 +437,6 @@ void serve_forever(int* socket_number, void (*request_handler)(int)) {
     {
       close(*socket_number);
       request_handler(client_socket_number);
-      close(client_socket_number);
       return 0;
     }
     close(client_socket_number);
@@ -457,7 +456,6 @@ void serve_forever(int* socket_number, void (*request_handler)(int)) {
     /* PART 6 BEGIN */
     pthread_t thread;
     pthread_create(&thread, NULL, request_handler, client_socket_number);
-    close(client_socket_number);
     /* PART 6 END */
 #elif POOLSERVER
     /*
