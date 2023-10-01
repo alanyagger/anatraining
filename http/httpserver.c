@@ -101,16 +101,27 @@ void serve_directory(int fd, char* path) {
   {
     DIR* dirp;
     struct dirent* direntp;
+    int length=0;
+    char stringlen[DIRLENMAX];
+
     dirp=opendir(path);
     http_start_response(fd, 200);
     http_send_header(fd, "Content-Type", http_get_mime_type(".html"));
-    http_send_header(fd, "Content-Length","BUFFERMAX");
+    while((direntp=readdir(dirp))!=NULL)
+    {
+      http_format_href(buffer,path,direntp->d_name);
+      length=length+strlen(buffer);
+    }
+    sprintf(stringlen,"%d",length);
+    rewinddir(dirp);
+    http_send_header(fd, "Content-Length",stringlen);
     http_end_headers(fd);
     while((direntp=readdir(dirp))!=NULL)
     {
-      memset(buffer,NULL,DIRLENMAX);
+      //memset(buffer,NULL,DIRLENMAX);
       http_format_href(buffer,path,direntp->d_name);
-      dprintf(fd, "%s",buffer);
+      socketwrite(fd,buffer,strlen(buffer));
+      //dprintf(fd, "%s",buffer);
       //http_format_href(buffer,"../",'\0');
     }
     closedir(dirp);
