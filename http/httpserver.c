@@ -129,15 +129,12 @@ void serve_directory(int fd, char* path) {
   free(buffer);
   /* TODO: PART 3 */
   /* PART 3 BEGIN */
-
   // TODO: Open the directory (Hint: opendir() may be useful here)
-
   /**
    * TODO: For each entry in the directory (Hint: look at the usage of readdir() ),
    * send a string containing a properly formatted HTML. (Hint: the http_format_href()
    * function in libhttp.c may be useful here)
    */
-
   /* PART 3 END */
 }
 
@@ -212,7 +209,9 @@ void handle_files_request(int fd) {
   }  
 close(fd);
 return;
-}    /* PART 2 & 3 END */
+}
+/* PART 2 & 3 END */
+
 /*
  * Opens a connection to the proxy target (hostname=server_proxy_hostname and
  * port=server_proxy_port) and relays traffic to/from the stream fd and the
