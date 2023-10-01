@@ -225,6 +225,27 @@ return;
  *
  *   Closes client socket (fd) and proxy target fd (target_fd) when finished.
  */
+struct fdtype{
+  int fd;
+  int target_fd;
+};
+
+void handle_client_fun(struct fdtype* fdnum)
+{
+  int fd,target_fd;
+  fd=fdnum->fd;
+  target_fd=fdnum->target_fd;
+  socket_rdwr(target_fd,fd);
+}
+
+void handle_proxy_fun(struct fdtype* fdnum)
+{
+  int fd,target_fd;
+  fd=fdnum->fd;
+  target_fd=fdnum->target_fd;
+  socket_rdwr(fd,target_fd);
+}
+
 void handle_proxy_request(int fd) {
 
   /*
@@ -272,10 +293,22 @@ void handle_proxy_request(int fd) {
     close(fd);
     return;
   }
-
   /* TODO: PART 4 */
   /* PART 4 BEGIN */
-
+  else
+  {
+    struct fdtype fdnum;
+    fdnum.fd = fd;
+    fdnum.target_fd = target_fd;
+    pthread_t client_thread,target_thread;
+    pthread_create(&client_thread,NULL,handle_client_fun,&fdnum);
+    pthread_create(&target_thread,NULL,handle_proxy_fun,&fdnum);
+    pthread_join(client_thread,NULL);
+    pthread_join(target_thread,NULL);
+    close(fd);
+    close(target_fd);
+    return;
+  }
   /* PART 4 END */
 }
 
