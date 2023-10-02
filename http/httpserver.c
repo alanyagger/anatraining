@@ -18,6 +18,8 @@
 #include "libhttp.h"
 #include "wq.h"
 
+#define BUFFERMAX 2048
+#define DIRLENMAX 512
 /*
  * Global configuration variables.
  * You need to use these in your implementation of handle_files_request and
@@ -31,39 +33,108 @@ char* server_files_directory;
 char* server_proxy_hostname;
 int server_proxy_port;
 
+void socketwrite(int fd, char *buffer, int length)
+{
+    int writtenbytes;
+    while(length>0)
+    {
+      writtenbytes=write(fd,buffer,length);
+      length=length-writtenbytes;
+      buffer=buffer+writtenbytes;
+    }
+}
+
+int socket_rdwr(int fd,int filefd)
+{
+  char buffer[BUFFERMAX];
+  int readbytes;
+  readbytes=read(filefd,buffer,BUFFERMAX);
+  while (readbytes>0)
+  {
+    socketwrite(fd,buffer,readbytes);
+    readbytes=read(filefd,buffer,BUFFERMAX);
+  }
+  return 0;
+}
 /*
  * Serves the contents the file stored at `path` to the client socket `fd`.
  * It is the caller's reponsibility to ensure that the file stored at `path` exists.
  */
-void serve_file(int fd, char* path) {
+void serve_file(int fd, char* path,int filefd) {
 
   /* TODO: PART 2 */
   /* PART 2 BEGIN */
-
+  struct stat filestat;
+  char* contentlen=malloc(sizeof(long)+1);
+  stat(path,&filestat);
   http_start_response(fd, 200);
   http_send_header(fd, "Content-Type", http_get_mime_type(path));
-  http_send_header(fd, "Content-Length", "0"); // TODO: change this line too
+  sprintf(contentlen,"%ld",filestat.st_size);
+  http_send_header(fd, "Content-Length", contentlen); // TODO: change this line too
   http_end_headers(fd);
-
+  socket_rdwr(fd,filefd);
+  free(contentlen);
   /* PART 2 END */
 }
 
 void serve_directory(int fd, char* path) {
-  http_start_response(fd, 200);
-  http_send_header(fd, "Content-Type", http_get_mime_type(".html"));
-  http_end_headers(fd);
+  char* buffer=malloc(DIRLENMAX);
+  int filefd;
 
+  http_format_index(buffer,path);
+  filefd=open(buffer,O_RDONLY);
+  if (filefd!=-1)
+  {
+    struct stat filestat;
+    char* contentlen=malloc(sizeof(long)+1);
+    stat(buffer,&filestat);
+    sprintf(contentlen,"%ld",filestat.st_size);
+    http_start_response(fd, 200);
+    http_send_header(fd, "Content-Type", http_get_mime_type(".html"));
+    http_send_header(fd, "Content-Length", contentlen); 
+    http_end_headers(fd);
+    socket_rdwr(fd,filefd);
+    free(contentlen);
+    close(filefd);
+  }
+  else
+  {
+    DIR* dirp;
+    struct dirent* direntp;
+    int length=0;
+    char stringlen[DIRLENMAX];
+
+    dirp=opendir(path);
+    http_start_response(fd, 200);
+    http_send_header(fd, "Content-Type", http_get_mime_type(".html"));
+    while((direntp=readdir(dirp))!=NULL)
+    {
+      http_format_href(buffer,path,direntp->d_name);
+      length=length+strlen(buffer);
+    }
+    sprintf(stringlen,"%d",length);
+    rewinddir(dirp);
+    http_send_header(fd, "Content-Length",stringlen);
+    http_end_headers(fd);
+    while((direntp=readdir(dirp))!=NULL)
+    {
+      //memset(buffer,NULL,DIRLENMAX);
+      http_format_href(buffer,path,direntp->d_name);
+      socketwrite(fd,buffer,strlen(buffer));
+      //dprintf(fd, "%s",buffer);
+      //http_format_href(buffer,"../",'\0');
+    }
+    closedir(dirp);
+  }
+  free(buffer);
   /* TODO: PART 3 */
   /* PART 3 BEGIN */
-
   // TODO: Open the directory (Hint: opendir() may be useful here)
-
   /**
    * TODO: For each entry in the directory (Hint: look at the usage of readdir() ),
    * send a string containing a properly formatted HTML. (Hint: the http_format_href()
    * function in libhttp.c may be useful here)
    */
-
   /* PART 3 END */
 }
 
@@ -83,6 +154,7 @@ void serve_directory(int fd, char* path) {
 void handle_files_request(int fd) {
 
   struct http_request* request = http_request_parse(fd);
+  int filefd;
 
   if (request == NULL || request->path[0] != '/') {
     http_start_response(fd, 400);
@@ -117,12 +189,28 @@ void handle_files_request(int fd) {
    */
 
   /* PART 2 & 3 BEGIN */
-
-  /* PART 2 & 3 END */
-
-  close(fd);
-  return;
+  struct stat isdir;
+  stat(path,&isdir);
+  if (S_ISREG(isdir.st_mode))
+  { 
+    filefd=open(path,O_RDWR);
+    serve_file(fd,path,filefd);
+    close(filefd);
+  }
+  else if(S_ISDIR(isdir.st_mode))
+  {
+    serve_directory(fd,path);
+  }
+  else
+  {
+    http_start_response(fd, 404);
+    http_send_header(fd, "Content-Type", "text/html");
+    http_end_headers(fd);
+  }  
+close(fd);
+return;
 }
+/* PART 2 & 3 END */
 
 /*
  * Opens a connection to the proxy target (hostname=server_proxy_hostname and
@@ -137,6 +225,27 @@ void handle_files_request(int fd) {
  *
  *   Closes client socket (fd) and proxy target fd (target_fd) when finished.
  */
+struct fdtype{
+  int fd;
+  int target_fd;
+};
+
+void handle_client_fun(struct fdtype* fdnum)
+{
+  int fd,target_fd;
+  fd=fdnum->fd;
+  target_fd=fdnum->target_fd;
+  socket_rdwr(target_fd,fd);
+}
+
+void handle_proxy_fun(struct fdtype* fdnum)
+{
+  int fd,target_fd;
+  fd=fdnum->fd;
+  target_fd=fdnum->target_fd;
+  socket_rdwr(fd,target_fd);
+}
+
 void handle_proxy_request(int fd) {
 
   /*
@@ -184,10 +293,22 @@ void handle_proxy_request(int fd) {
     close(fd);
     return;
   }
-
   /* TODO: PART 4 */
   /* PART 4 BEGIN */
-
+  else
+  {
+    struct fdtype fdnum;
+    fdnum.fd = fd;
+    fdnum.target_fd = target_fd;
+    pthread_t client_thread,target_thread;
+    pthread_create(&client_thread,NULL,handle_client_fun,&fdnum);
+    pthread_create(&target_thread,NULL,handle_proxy_fun,&fdnum);
+    pthread_join(client_thread,NULL);
+    pthread_join(target_thread,NULL);
+    close(fd);
+    close(target_fd);
+    return;
+  }
   /* PART 4 END */
 }
 
@@ -203,7 +324,7 @@ void* handle_clients(void* void_request_handler) {
   /* (Valgrind) Detach so thread frees its memory on completion, since we won't
    * be joining on it. */
   pthread_detach(pthread_self());
-
+request_handler()
   /* TODO: PART 7 */
   /* PART 7 BEGIN */
 
@@ -217,7 +338,8 @@ void init_thread_pool(int num_threads, void (*request_handler)(int)) {
 
   /* TODO: PART 7 */
   /* PART 7 BEGIN */
-
+  wq_init(&work_queue);
+ work_queue.size = num_threads;
   /* PART 7 END */
 }
 #endif
@@ -263,7 +385,8 @@ void serve_forever(int* socket_number, void (*request_handler)(int)) {
    */
 
   /* PART 1 BEGIN */
-
+  bind(*socket_number,&server_address,sizeof(server_address));
+  listen(*socket_number,1024);
   /* PART 1 END */
   printf("Listening on port %d...\n", server_port);
 
@@ -280,7 +403,7 @@ void serve_forever(int* socket_number, void (*request_handler)(int)) {
                                   (socklen_t*)&client_address_length);
     if (client_socket_number < 0) {
       perror("Error accepting socket");
-      continue;
+      break;
     }
 
     printf("Accepted connection from %s on port %d\n", inet_ntoa(client_address.sin_addr),
@@ -310,7 +433,14 @@ void serve_forever(int* socket_number, void (*request_handler)(int)) {
      */
 
     /* PART 5 BEGIN */
-
+    int tmppid=fork();
+    if (tmppid==0)
+    {
+      close(*socket_number);
+      request_handler(client_socket_number);
+      return 0;
+    }
+    close(client_socket_number);
     /* PART 5 END */
 
 #elif THREADSERVER
@@ -325,7 +455,8 @@ void serve_forever(int* socket_number, void (*request_handler)(int)) {
      */
 
     /* PART 6 BEGIN */
-
+    pthread_t thread;
+    pthread_create(&thread, NULL, request_handler, client_socket_number);
     /* PART 6 END */
 #elif POOLSERVER
     /*
@@ -337,7 +468,9 @@ void serve_forever(int* socket_number, void (*request_handler)(int)) {
      */
 
     /* PART 7 BEGIN */
-
+    wq_push(client_socket_number);
+    handle_clients(request_handler);
+    wq_pop(&work_queue);
     /* PART 7 END */
 #endif
   }
