@@ -324,7 +324,7 @@ void* handle_clients(void* void_request_handler) {
   /* (Valgrind) Detach so thread frees its memory on completion, since we won't
    * be joining on it. */
   pthread_detach(pthread_self());
-
+request_handler()
   /* TODO: PART 7 */
   /* PART 7 BEGIN */
 
@@ -338,7 +338,8 @@ void init_thread_pool(int num_threads, void (*request_handler)(int)) {
 
   /* TODO: PART 7 */
   /* PART 7 BEGIN */
-
+  wq_init(&work_queue);
+ work_queue.size = num_threads;
   /* PART 7 END */
 }
 #endif
@@ -467,7 +468,9 @@ void serve_forever(int* socket_number, void (*request_handler)(int)) {
      */
 
     /* PART 7 BEGIN */
-
+    wq_push(client_socket_number);
+    handle_clients(request_handler);
+    wq_pop(&work_queue);
     /* PART 7 END */
 #endif
   }
