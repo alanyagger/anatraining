@@ -104,8 +104,7 @@ func someUsefulThings() {
 type User struct {
 	Username string
 	Password string
-	UUID     [16]byte
-
+	UUID     uuid.UUID
 	// You can add other attributes here if you want! But note that in order for attributes to
 	// be included when this struct is serialized to/from JSON, they must be capitalized.
 	// On the flipside, if you have an attribute that you want to be able to access from
@@ -205,11 +204,20 @@ func (userdata *User) LoadFile(filename string) (content []byte, err error) {
 }
 
 func (userdata *User) CreateInvitation(filename string, recipientUsername string) (invitationPtr uuid.UUID, err error) {
-
-	return
+	invitationPtr, _ = uuid.FromBytes(userlib.Hash([]byte(filename + recipientUsername))[:16])
+	rawcontent, _ := userdata.LoadFile(filename)
+	rawcontentBytes, _ := json.Marshal(rawcontent)
+	userlib.DatastoreSet(invitationPtr, rawcontentBytes)
+	return invitationPtr, nil
 }
 
 func (userdata *User) AcceptInvitation(senderUsername string, invitationPtr uuid.UUID, filename string) error {
+	var rawcontent []byte
+	userdata.invitorname = senderUsername
+	userdata.invitationUUID, _ = uuid.FromBytes(userlib.Hash([]byte(filename + userdata.Username))[:16])
+	rawcontentBytes, _ := userlib.DatastoreGet(invitationPtr)
+	json.Unmarshal(rawcontentBytes, &rawcontent)
+	userdata.StoreFile(filename, rawcontent)
 	return nil
 }
 
