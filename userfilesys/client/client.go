@@ -128,24 +128,31 @@ func InitUser(username string, password string) (userdataptr *User, err error) {
 	userdata.UUID = deterministicUUID
 	_, ok := userlib.DatastoreGet(userdata.UUID)
 	if ok {
-		err = errors.New("User has existed")
+		return nil, errors.New(strings.ToTitle("user has existed"))
+	}
+	userbytes, err := json.Marshal(&userdata)
+	if err != nil {
 		return nil, err
 	}
-	userlib.DatastoreSet(userdata.UUID, []byte("hello"))
+	userlib.DatastoreSet(userdata.UUID, userbytes)
 	return &userdata, nil
 }
 
 func GetUser(username string, password string) (userdataptr *User, err error) {
 	var userdata User
-	userdata.Username = username
-	userdata.Password = password
+	var tempdata []byte
 	hash := userlib.Hash([]byte(username))
-	deterministicUUID, _ := uuid.FromBytes(hash[:16])
-	userdata.UUID = deterministicUUID
-	_, ok := userlib.DatastoreGet(userdata.UUID)
+	testUUID, _ := uuid.FromBytes(hash[:16])
+	tempdata, ok := userlib.DatastoreGet(testUUID)
 	if !ok {
-		err = errors.New("User does not exist")
+		return nil, errors.New(strings.ToTitle("user does not exist"))
+	}
+	err = json.Unmarshal(tempdata, &userdata)
+	if err != nil {
 		return nil, err
+	}
+	if userdata.Password != password {
+		return nil, errors.New(strings.ToTitle("password is not correct"))
 	}
 	userdataptr = &userdata
 	return userdataptr, nil
@@ -161,10 +168,26 @@ func (userdata *User) StoreFile(filename string, content []byte) (err error) {
 		return err
 	}
 	userlib.DatastoreSet(storageKey, contentBytes)
-	return
+	return nil
 }
 
 func (userdata *User) AppendToFile(filename string, content []byte) error {
+	var precontent []byte
+	var mergedcontent []byte
+	contentBytes, err := json.Marshal(content)
+	if err != nil {
+		return err
+	}
+	storageKey, err := uuid.FromBytes(userlib.Hash([]byte(filename + userdata.Username))[:16])
+	if err != nil {
+		return err
+	}
+	precontent, ok := userlib.DatastoreGet(storageKey)
+	if !ok {
+		return errors.New(strings.ToTitle("file not found"))
+	}
+	mergedcontent = append(precontent[:], contentBytes[:]...) //merge
+	userlib.DatastoreSet(storageKey, mergedcontent)
 	return nil
 }
 
@@ -181,8 +204,8 @@ func (userdata *User) LoadFile(filename string) (content []byte, err error) {
 	return content, err
 }
 
-func (userdata *User) CreateInvitation(filename string, recipientUsername string) (
-	invitationPtr uuid.UUID, err error) {
+func (userdata *User) CreateInvitation(filename string, recipientUsername string) (invitationPtr uuid.UUID, err error) {
+
 	return
 }
 
