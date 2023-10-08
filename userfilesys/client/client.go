@@ -120,13 +120,33 @@ func InitUser(username string, password string) (userdataptr *User, err error) {
 	var userdata User
 	userdata.Username = username
 	userdata.Password = password
-	userdata.UUID := uuid.New()
-
+	hash := userlib.Hash([]byte(username))
+	deterministicUUID, err := uuid.FromBytes(hash[:16])
+	if err != nil {
+		return nil, err
+	}
+	userdata.UUID = deterministicUUID
+	_, ok := userlib.DatastoreGet(userdata.UUID)
+	if ok {
+		err = errors.New("User has existed")
+		return nil, err
+	}
+	userlib.DatastoreSet(userdata.UUID, []byte("hello"))
 	return &userdata, nil
 }
 
 func GetUser(username string, password string) (userdataptr *User, err error) {
 	var userdata User
+	userdata.Username = username
+	userdata.Password = password
+	hash := userlib.Hash([]byte(username))
+	deterministicUUID, err := uuid.FromBytes(hash[:16])
+	userdata.UUID = deterministicUUID
+	_, ok := userlib.DatastoreGet(userdata.UUID)
+	if !ok {
+		err = errors.New("User does not exist")
+		return nil, err
+	}
 	userdataptr = &userdata
 	return userdataptr, nil
 }
