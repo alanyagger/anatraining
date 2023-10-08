@@ -140,7 +140,7 @@ func GetUser(username string, password string) (userdataptr *User, err error) {
 	userdata.Username = username
 	userdata.Password = password
 	hash := userlib.Hash([]byte(username))
-	deterministicUUID, err := uuid.FromBytes(hash[:16])
+	deterministicUUID, _ := uuid.FromBytes(hash[:16])
 	userdata.UUID = deterministicUUID
 	_, ok := userlib.DatastoreGet(userdata.UUID)
 	if !ok {
