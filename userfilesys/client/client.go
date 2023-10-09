@@ -228,6 +228,9 @@ func (userdata *User) CreateInvitation(filename string, recipientUsername string
 	if err != nil {
 		return u, err
 	}
+	if filename == userdata.Shared_filename {
+		owner_storageKey = userdata.Invitor_storeykey
+	}
 	owner_storageKey_Bytes, err := json.Marshal(owner_storageKey)
 	if err != nil {
 		return u, err
@@ -252,5 +255,11 @@ func (userdata *User) AcceptInvitation(senderUsername string, invitationPtr uuid
 }
 
 func (userdata *User) RevokeAccess(filename string, recipientUsername string) error {
+	revokedPtr, err := uuid.FromBytes(userlib.Hash([]byte(filename + recipientUsername))[:16])
+	if err != nil {
+		return err
+	}
+	userlib.DatastoreDelete(revokedPtr)
+
 	return nil
 }
