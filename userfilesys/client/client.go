@@ -19,7 +19,7 @@ import (
 	"strings"
 
 	// Useful for formatting strings (e.g. `fmt.Sprintf`).
-	"fmt"
+	//"fmt"
 
 	// Useful for creating new error messages to return using errors.New("...")
 	"errors"
@@ -31,7 +31,7 @@ import (
 // This serves two purposes: it shows you a few useful primitives,
 // and suppresses warnings for imports not being used. It can be
 // safely deleted!
-func someUsefulThings() {
+/*func someUsefulThings() {
 
 	// Creates a random UUID.
 	randomUUID := uuid.New()
@@ -54,7 +54,7 @@ func someUsefulThings() {
 
 	// Declares a Course struct type, creates an instance of it, and marshals it into JSON.
 	type Course struct {
-		name      string
+		Name      string
 		professor []byte
 	}
 
@@ -96,16 +96,17 @@ func someUsefulThings() {
 
 	// Here's an example of string interpolation!
 	_ = fmt.Sprintf("%s_%d", "file", 1)
-}
+}*/
 
 // This is the type definition for the User struct.
 // A Go struct is like a Python or Java class - it can have attributes
 // (e.g. like the Username attribute) and methods (e.g. like the StoreFile method below).
 type User struct {
-	Username string
-	Password string
-	UUID     [16]byte
-
+	Username          string
+	Password          string
+	UUID              uuid.UUID
+	Invitor_storeykey uuid.UUID
+	Shared_filename   string
 	// You can add other attributes here if you want! But note that in order for attributes to
 	// be included when this struct is serialized to/from JSON, they must be capitalized.
 	// On the flipside, if you have an attribute that you want to be able to access from
@@ -120,6 +121,7 @@ func InitUser(username string, password string) (userdataptr *User, err error) {
 	var userdata User
 	userdata.Username = username
 	userdata.Password = password
+	userdata.Shared_filename = ""
 	hash := userlib.Hash([]byte(username))
 	deterministicUUID, err := uuid.FromBytes(hash[:16])
 	if err != nil {
@@ -177,6 +179,9 @@ func (userdata *User) AppendToFile(filename string, content []byte) error {
 	if err != nil {
 		return err
 	}
+	if filename == userdata.Shared_filename {
+		storageKey = userdata.Invitor_storeykey
+	}
 	precontentBytes, ok := userlib.DatastoreGet(storageKey)
 	if !ok {
 		return errors.New(strings.ToTitle("file not found"))
@@ -199,6 +204,9 @@ func (userdata *User) LoadFile(filename string) (content []byte, err error) {
 	if err != nil {
 		return nil, err
 	}
+	if filename == userdata.Shared_filename {
+		storageKey = userdata.Invitor_storeykey
+	}
 	dataJSON, ok := userlib.DatastoreGet(storageKey)
 	if !ok {
 		return nil, errors.New(strings.ToTitle("file not found"))
@@ -211,11 +219,35 @@ func (userdata *User) LoadFile(filename string) (content []byte, err error) {
 }
 
 func (userdata *User) CreateInvitation(filename string, recipientUsername string) (invitationPtr uuid.UUID, err error) {
-
+	u := uuid.New()
+	invitationPtr, err = uuid.FromBytes(userlib.Hash([]byte(filename + recipientUsername))[:16])
+	if err != nil {
+		return u, err
+	}
+	owner_storageKey, err := uuid.FromBytes(userlib.Hash([]byte(filename + userdata.Username))[:16])
+	if err != nil {
+		return u, err
+	}
+	owner_storageKey_Bytes, err := json.Marshal(owner_storageKey)
+	if err != nil {
+		return u, err
+	}
+	userlib.DatastoreSet(invitationPtr, owner_storageKey_Bytes)
 	return
 }
 
 func (userdata *User) AcceptInvitation(senderUsername string, invitationPtr uuid.UUID, filename string) error {
+	userdata.Shared_filename = filename
+	var temp uuid.UUID
+	rawstoreykey, ok := userlib.DatastoreGet(invitationPtr)
+	if !ok {
+		return errors.New(strings.ToTitle("invitation not found"))
+	}
+	err := json.Unmarshal(rawstoreykey, &temp)
+	if err != nil {
+		return err
+	}
+	userdata.Invitor_storeykey = temp
 	return nil
 }
 
