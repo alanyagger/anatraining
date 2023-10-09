@@ -172,22 +172,25 @@ func (userdata *User) StoreFile(filename string, content []byte) (err error) {
 }
 
 func (userdata *User) AppendToFile(filename string, content []byte) error {
-	var precontent []byte
-	var mergedcontent []byte
-	contentBytes, err := json.Marshal(content)
-	if err != nil {
-		return err
-	}
+	var precontentBytes, precontent []byte
 	storageKey, err := uuid.FromBytes(userlib.Hash([]byte(filename + userdata.Username))[:16])
 	if err != nil {
 		return err
 	}
-	precontent, ok := userlib.DatastoreGet(storageKey)
+	precontentBytes, ok := userlib.DatastoreGet(storageKey)
 	if !ok {
 		return errors.New(strings.ToTitle("file not found"))
 	}
-	mergedcontent = append(precontent[:], contentBytes[:]...) //merge
-	userlib.DatastoreSet(storageKey, mergedcontent)
+	err = json.Unmarshal(precontentBytes, &precontent)
+	if err != nil {
+		return err
+	}
+	mergedcontent := append(precontent, content...)
+	mergedcontentBytes, err := json.Marshal(mergedcontent)
+	if err != nil {
+		return err
+	}
+	userlib.DatastoreSet(storageKey, mergedcontentBytes)
 	return nil
 }
 
@@ -201,7 +204,10 @@ func (userdata *User) LoadFile(filename string) (content []byte, err error) {
 		return nil, errors.New(strings.ToTitle("file not found"))
 	}
 	err = json.Unmarshal(dataJSON, &content)
-	return content, err
+	if err != nil {
+		return nil, err
+	}
+	return content, nil
 }
 
 func (userdata *User) CreateInvitation(filename string, recipientUsername string) (invitationPtr uuid.UUID, err error) {
