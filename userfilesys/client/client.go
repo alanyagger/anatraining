@@ -122,8 +122,10 @@ func InitUser(username string, password string) (userdataptr *User, err error) {
 	userdata.Username = username
 	userdata.Password = password
 	userdata.Shared_filename = ""
-	hash := userlib.Hash([]byte(username))
-	deterministicUUID, err := uuid.FromBytes(hash[:16])
+	if username == "" {
+		return nil, errors.New(strings.ToTitle("username is empty"))
+	}
+	deterministicUUID, err := uuid.FromBytes(userlib.Hash([]byte(username))[:16])
 	if err != nil {
 		return nil, err
 	}
